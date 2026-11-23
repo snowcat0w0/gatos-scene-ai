@@ -1,0 +1,241 @@
+/* Gato's Scene AI — panel and connection window. Colours come from Foundry's theme variables. */
+
+.gatos-scene-ai .gsa-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.gatos-scene-ai .gsa-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.gatos-scene-ai .gsa-scene {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.gatos-scene-ai .gsa-meta {
+  font-size: var(--font-size-12, 12px);
+  opacity: 0.75;
+}
+.gatos-scene-ai .gsa-provider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.5));
+  border-radius: 4px;
+}
+.gatos-scene-ai .gsa-provider > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gatos-scene-ai .gsa-provider.missing {
+  border-color: var(--color-level-warning, #ee9b3a);
+}
+.gatos-scene-ai .gsa-provider button {
+  flex: none;
+  width: auto;
+}
+
+.gatos-scene-ai .gsa-panel fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+}
+.gatos-scene-ai .gsa-panel .hint {
+  margin: 0;
+}
+
+.gatos-scene-ai .gsa-check {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+.gatos-scene-ai .gsa-check input[type="checkbox"] {
+  flex: none;
+  margin: 0;
+}
+.gatos-scene-ai .gsa-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.gatos-scene-ai .gsa-grid2 {
+  display: grid;
+  grid-template-columns: 1fr minmax(7rem, 9rem);
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+}
+
+.gatos-scene-ai .gsa-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.gatos-scene-ai .gsa-buttons button {
+  flex: 1 1 auto;
+  width: auto;
+  white-space: nowrap;
+}
+.gatos-scene-ai .gsa-buttons .gsa-meta {
+  flex: none;
+}
+
+.gatos-scene-ai .gsa-result {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 0.6rem;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.12);
+}
+.gatos-scene-ai .gsa-result dt {
+  opacity: 0.75;
+}
+.gatos-scene-ai .gsa-result dd {
+  margin: 0;
+}
+
+.gatos-scene-ai .gsa-badge {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 3px;
+  color: #fff;
+  background: #7a7a7a;
+}
+.gatos-scene-ai .gsa-badge.high {
+  background: #2f8f4e;
+}
+.gatos-scene-ai .gsa-badge.medium {
+  background: #b7791f;
+}
+.gatos-scene-ai .gsa-badge.low {
+  background: #b33a3a;
+}
+
+.gatos-scene-ai .gsa-note {
+  margin: 0;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.12);
+}
+.gatos-scene-ai .gsa-note.warn {
+  border-left: 3px solid var(--color-level-warning, #ee9b3a);
+}
+
+.gatos-scene-ai .gsa-progress {
+  position: relative;
+  height: 1.5rem;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.5));
+  border-radius: 4px;
+  overflow: hidden;
+}
+.gatos-scene-ai .gsa-progress .gsa-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(70, 140, 220, 0.45);
+  transition: width 0.25s ease;
+}
+.gatos-scene-ai .gsa-progress span {
+  position: relative;
+  display: block;
+  text-align: center;
+  line-height: 1.5rem;
+  font-size: var(--font-size-12, 12px);
+}
+
+.gatos-scene-ai .gsa-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--color-border, rgba(128, 128, 128, 0.5));
+}
+.gatos-scene-ai .gsa-found p {
+  margin: 0;
+}
+
+.gatos-scene-ai .gsa-foot button {
+  width: 100%;
+}
+
+.gatos-scene-ai .gsa-log {
+  max-height: 9rem;
+  margin: 0;
+  padding: 0.3rem 0.5rem;
+  overflow-y: auto;
+  list-style: none;
+  font-size: var(--font-size-12, 12px);
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.12);
+}
+.gatos-scene-ai .gsa-log li {
+  padding: 0.1rem 0 0.1rem 0.5rem;
+  border-left: 3px solid transparent;
+  overflow-wrap: anywhere;
+}
+.gatos-scene-ai .gsa-log li.ok {
+  border-left-color: #2f8f4e;
+}
+.gatos-scene-ai .gsa-log li.warn {
+  border-left-color: var(--color-level-warning, #ee9b3a);
+}
+.gatos-scene-ai .gsa-log li.error {
+  border-left-color: var(--color-level-error, #d04848);
+}
+
+/* Connection window */
+.gatos-scene-ai .gsa-provider-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.gatos-scene-ai .gsa-provider-body .form-fields button {
+  flex: none;
+  width: auto;
+  white-space: nowrap;
+}
+.gatos-scene-ai .gsa-test-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.gatos-scene-ai .gsa-status {
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid #7a7a7a;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.12);
+  overflow-wrap: anywhere;
+}
+.gatos-scene-ai .gsa-status.ok {
+  border-left-color: #2f8f4e;
+}
+.gatos-scene-ai .gsa-status.warn {
+  border-left-color: var(--color-level-warning, #ee9b3a);
+}
+.gatos-scene-ai .gsa-status.error {
+  border-left-color: var(--color-level-error, #d04848);
+}
+
+/* Keep both windows inside the viewport: the content scrolls instead. */
+.gatos-scene-ai.gsa-provider-config,
+.gatos-scene-ai.gsa-panel-app {
+  max-height: calc(100vh - 40px);
+}
+.gatos-scene-ai.gsa-provider-config .window-content,
+.gatos-scene-ai.gsa-panel-app .window-content {
+  overflow-y: auto;
+}

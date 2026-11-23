@@ -1,0 +1,181 @@
+{
+  "GATOSSA": {
+    "NeedLib": "Gato's Scene AI: gatos-lib 모듈을 활성화해야 합니다.",
+    "Settings": {
+      "ProviderMenu": {
+        "Name": "AI 연결",
+        "Label": "AI 연결 설정",
+        "Hint": "지도를 읽을 AI 서비스(API 키) 또는 로컬 LLM 서버를 고릅니다. 이 설정은 지금 쓰는 브라우저에만 저장됩니다."
+      }
+    },
+    "Control": {
+      "Open": "Scene AI: 격자·벽·광원 자동 설정"
+    },
+    "Common": {
+      "Cancel": "취소"
+    },
+    "Panel": {
+      "Title": "Scene AI",
+      "NoScene": "캔버스에 열린 장면이 없습니다.",
+      "Meta": "{width}×{height}px · 격자 {size}px",
+      "NoProvider": "AI 연결이 설정되지 않았습니다",
+      "OpenProvider": "연결 설정",
+      "NoBackground": "이 장면에는 배경 이미지가 없습니다. 배경을 넣은 뒤 다시 열어 주세요.",
+      "HexUnsupported": "육각 격자 장면은 벽·광원 분석을 지원하지 않습니다. 사각 격자나 격자 없음으로 바꿔 주세요."
+    },
+    "Provider": {
+      "Title": "Scene AI — AI 연결 설정",
+      "Intro": "이미지를 볼 수 있는(비전) 모델이 필요합니다. 요청은 이 브라우저에서 아래 주소로 바로 보내며, 지도 이미지가 그 서비스로 전송됩니다.",
+      "Preset": "서비스",
+      "Type": "API 형식",
+      "TypeHint": "서비스를 고르면 자동으로 맞춰집니다. 직접 입력한 서버라면 그 서버가 따르는 형식을 고르세요.",
+      "BaseUrl": "서버 주소",
+      "LocalHint": "로컬 서버는 브라우저 요청(CORS)을 허용해야 합니다. Ollama는 환경 변수 OLLAMA_ORIGINS에 Foundry 주소를 넣고, LM Studio는 서버 설정에서 CORS를 켜세요. llama.cpp 서버는 기본으로 허용합니다.",
+      "ApiKey": "API 키",
+      "ApiKeyHint": "이 브라우저의 저장소에만 보관되고 월드나 플레이어에게 전달되지 않습니다. 로컬 서버는 비워 두세요.",
+      "Model": "모델",
+      "ModelHint": "모델 이름을 직접 적거나 ‘목록’을 눌러 서버가 제공하는 모델에서 고르세요.",
+      "ListModels": "목록",
+      "Advanced": "고급",
+      "MaxImagePx": "이미지 최대 크기(px)",
+      "MaxImagePxHint": "AI에게 보내는 타일 한 장의 긴 변 길이입니다. 크면 정확해지지만 느리고 비쌉니다.",
+      "Concurrency": "동시 요청 수",
+      "ConcurrencyHint": "로컬 LLM은 1을 권합니다.",
+      "Timeout": "응답 대기 시간(초)",
+      "JsonMode": "JSON 모드 요청",
+      "JsonModeHint": "서버가 지원하면 JSON 형식 응답을 강제합니다. 지원하지 않는 서버에서는 자동으로 끄고 다시 시도합니다.",
+      "Test": "연결 테스트",
+      "Save": "저장",
+      "Listing": "모델 목록을 불러오는 중…",
+      "Listed": "모델 {count}개를 불러왔습니다. 모델 칸을 눌러 고르세요.",
+      "ListedNone": "서버가 모델을 하나도 알려 주지 않았습니다. 이름을 직접 적어 주세요.",
+      "Testing": "테스트 이미지를 보내는 중…",
+      "TestOk": "연결 성공: {model} 모델이 이미지를 제대로 읽었습니다.",
+      "TestNoVision": "응답은 왔지만 이미지를 읽지 못한 것 같습니다. 비전 모델인지 확인하세요. (응답: {answer})",
+      "Presets": {
+        "Anthropic": "Anthropic (Claude)",
+        "Openai": "OpenAI",
+        "Gemini": "Google Gemini",
+        "Openrouter": "OpenRouter",
+        "Ollama": "Ollama (로컬)",
+        "Lmstudio": "LM Studio (로컬)",
+        "Llamacpp": "llama.cpp 서버 (로컬)",
+        "Custom": "직접 입력"
+      },
+      "Types": {
+        "Openai": "OpenAI 호환 (Chat Completions)",
+        "Anthropic": "Anthropic Messages",
+        "Gemini": "Google Gemini"
+      }
+    },
+    "Grid": {
+      "Legend": "1. 격자 맞추기",
+      "Hint": "지도에 그려진 격자를 찾아 Foundry 격자를 그 위에 맞춥니다. 격자 크기, 장면 크기, 배경 위치가 바뀝니다.",
+      "UseAi": "AI로 결과 확인 (격자가 없는 지도는 AI가 축척을 추정)",
+      "Detect": "격자 찾기",
+      "Apply": "장면에 적용",
+      "Undo": "되돌리기",
+      "CellLabel": "지도 한 칸",
+      "Cell": "{x} × {y}px",
+      "ConfidenceLabel": "신뢰도",
+      "Confidence": {
+        "High": "높음",
+        "Medium": "보통",
+        "Low": "낮음"
+      },
+      "Method": {
+        "Signal": "이미지 분석",
+        "SignalAi": "이미지 분석 + AI 확인",
+        "Ai": "AI 추정"
+      },
+      "VerdictLabel": "AI 판정",
+      "Verdict": {
+        "Ok": "지도 격자와 일치",
+        "Half": "칸이 절반 크기였음 → 보정함",
+        "Double": "칸이 두 배 크기였음 → 보정함",
+        "Shifted": "크기는 맞지만 위치가 어긋나 보임",
+        "Wrong": "지도 격자와 맞지 않음",
+        "Nogrid": "그려진 격자 없음, 축척은 그럴듯함"
+      },
+      "EstimateLabel": "AI 추정",
+      "Estimate": "가로 {across}칸 × 세로 {down}칸",
+      "ValuesLabel": "적용할 값",
+      "Values": "격자 {size}px · 장면 {width}×{height}px · 배경 이동 ({offsetX}, {offsetY})",
+      "Start": "지도에서 격자를 찾는 중…",
+      "StartAi": "지도에서 격자를 찾고 AI로 확인하는 중…",
+      "NotFound": "격자를 찾지 못했습니다. 지도가 너무 작거나 배경을 읽을 수 없습니다.",
+      "Found": "격자를 찾았습니다. ‘장면에 적용’을 누르면 반영됩니다.",
+      "FoundLow": "뚜렷한 격자가 보이지 않아 결과를 믿기 어렵습니다. ‘AI로 결과 확인’을 켜고 다시 시도해 보세요.",
+      "FoundLowAi": "그려진 격자가 뚜렷하지 않아 AI가 추정한 축척을 썼습니다. 적용한 뒤 눈으로 확인해 주세요.",
+      "FoundDoubt": "격자를 찾았지만 AI는 어긋나 보인다고 판단했습니다. 적용한 뒤 Grid Align으로 직접 끌어 맞춰 보세요.",
+      "ConfirmTitle": "격자 적용",
+      "ConfirmPlaced": "이 장면에는 이미 벽·토큰 같은 배치물이 {count}개 있습니다. 격자와 장면 크기를 바꾸면 지도와 어긋날 수 있습니다. 계속할까요?",
+      "Applied": "격자를 적용했습니다: {size}px, 장면 {width}×{height}px, 배경 이동 ({offsetX}, {offsetY}).",
+      "Undone": "격자를 적용 전 값으로 되돌렸습니다."
+    },
+    "Analyze": {
+      "Legend": "2. 벽·문·광원 찾기",
+      "Hint": "지도를 타일로 나눠 AI에게 보여 주고 벽, 문, 광원 위치를 받아옵니다. 결과는 먼저 캔버스에 미리보기로 표시됩니다. 격자를 먼저 맞춰야 정확합니다.",
+      "Walls": "벽",
+      "Doors": "문·창문",
+      "Lights": "광원",
+      "TileCells": "타일 크기(칸)",
+      "TileCellsHint": "한 번에 AI에게 보여 주는 범위입니다. 작을수록 정확하지만 요청 횟수가 늘어납니다.",
+      "SnapLabel": "좌표 맞춤",
+      "SnapHint": "AI가 준 좌표를 격자의 어느 단위로 맞출지 정합니다. 직각 위주의 던전은 반 칸, 동굴처럼 구불구불한 지도는 1/4칸이나 맞춤 없음이 낫습니다.",
+      "Snap": {
+        "Full": "한 칸",
+        "Half": "반 칸",
+        "Quarter": "1/4칸",
+        "None": "맞춤 없음"
+      },
+      "LightScale": "광원 반경 배율",
+      "LightScaleHint": "기본값은 횃불이 밝은 빛 4칸, 어두운 빛 8칸입니다(5ft 격자에서 20/40ft).",
+      "Overview": "먼저 지도 전체를 훑어보기 (요청 1회 추가)",
+      "OverviewHint": "지도 종류와 벽·문이 어떻게 그려졌는지 먼저 파악해 각 타일 분석에 알려 줍니다.",
+      "Run": "분석 시작",
+      "Cancel": "중단",
+      "Requests": "AI 요청 {count}회",
+      "PreviewHint": "캔버스에 미리보기가 표시됩니다: 노랑=벽, 보라=문, 빨강=비밀 문, 하늘=창문, 원=광원.",
+      "Replace": "이전에 AI가 만든 벽·광원을 지우고 적용",
+      "Apply": "장면에 적용",
+      "Discard": "버리기",
+      "Summary": "벽 {walls}개 · 문 {doors}개 · 광원 {lights}개를 찾았습니다.",
+      "Failed": "타일 {tiles}개 중 {failed}개는 AI 응답을 읽지 못해 빠졌습니다.",
+      "Start": "분석을 시작합니다: {model}, 요청 {count}회.",
+      "Done": "분석 완료: 벽 {walls}개, 문 {doors}개, 광원 {lights}개. 캔버스의 미리보기를 확인하세요.",
+      "TileFailed": "타일 {index} 실패: {message}",
+      "Usage": "사용 토큰: 입력 {input}, 출력 {output}.",
+      "Applied": "장면에 적용했습니다: 벽 {walls}개, 문 {doors}개, 광원 {lights}개 (이전 생성물 {removed}개 삭제).",
+      "Discarded": "분석 결과를 버렸습니다."
+    },
+    "Progress": {
+      "Overview": "지도 전체를 훑어보는 중…",
+      "Tiles": "타일 분석 중 {done}/{total}",
+      "Cancelled": "중단했습니다."
+    },
+    "Remove": {
+      "Button": "AI가 만든 벽·광원 지우기 ({count})",
+      "Title": "AI 생성물 삭제",
+      "Confirm": "이 장면에서 Scene AI가 만든 벽·문 {walls}개와 광원 {lights}개를 지웁니다. 직접 그린 벽과 광원은 그대로 둡니다.",
+      "Yes": "지우기",
+      "Done": "AI가 만든 벽·광원 {count}개를 지웠습니다."
+    },
+    "Error": {
+      "Network": "서버에 연결하지 못했습니다. 주소가 맞는지, 서버가 켜져 있는지, 로컬 서버라면 브라우저 요청(CORS)을 허용했는지 확인하세요. OpenAI는 API 키가 틀려도 이 오류로 나옵니다.",
+      "Timeout": "응답 대기 시간을 넘겼습니다. 연결 설정에서 대기 시간을 늘리거나 타일 크기를 줄여 보세요.",
+      "Aborted": "요청을 중단했습니다.",
+      "Auth": "API 키가 거부됐습니다. 키와 서비스가 맞는지 확인하세요.",
+      "Notfound": "주소 또는 모델을 찾을 수 없습니다. 서버 주소와 모델 이름을 확인하세요.",
+      "Rate": "요청 한도에 걸렸습니다. 잠시 뒤 다시 시도하거나 동시 요청 수를 줄이세요.",
+      "Refusal": "모델이 이 요청을 거절했습니다.",
+      "Empty": "모델이 빈 응답을 보냈습니다.",
+      "Config": "AI 연결 설정이 완전하지 않습니다. 서버 주소와 모델을 확인하세요.",
+      "Http": "서버 오류 {status}: {detail}",
+      "ImageLoad": "배경 이미지를 불러오지 못했습니다.",
+      "ImageTainted": "배경 이미지가 다른 사이트에 있고 그 사이트가 읽기를 허용하지 않습니다(CORS). 이미지를 Foundry 데이터 폴더로 옮겨 주세요.",
+      "JsonTruncated": "모델 응답이 중간에 끊겼습니다. 타일 크기를 줄여 보세요.",
+      "JsonInvalid": "모델 응답에서 결과(JSON)를 찾지 못했습니다."
+    }
+  }
+}

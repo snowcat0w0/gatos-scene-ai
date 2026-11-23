@@ -1,0 +1,84 @@
+<section class="gsa-provider-body">
+  <p class="hint">{{localize "GATOSSA.Provider.Intro"}}</p>
+
+  <div class="form-group">
+    <label for="gsa-preset">{{localize "GATOSSA.Provider.Preset"}}</label>
+    <div class="form-fields">
+      <select id="gsa-preset" name="preset">{{selectOptions presets selected=config.preset}}</select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="gsa-type">{{localize "GATOSSA.Provider.Type"}}</label>
+    <div class="form-fields">
+      <select id="gsa-type" name="type">{{selectOptions types selected=config.type}}</select>
+    </div>
+    <p class="hint">{{localize "GATOSSA.Provider.TypeHint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label for="gsa-base-url">{{localize "GATOSSA.Provider.BaseUrl"}}</label>
+    <div class="form-fields">
+      <input id="gsa-base-url" type="text" name="baseUrl" value="{{config.baseUrl}}" placeholder="http://localhost:11434/v1" spellcheck="false">
+    </div>
+    <p class="hint gsa-local-hint" {{#unless local}}hidden{{/unless}}>{{localize "GATOSSA.Provider.LocalHint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label for="gsa-api-key">{{localize "GATOSSA.Provider.ApiKey"}}</label>
+    <div class="form-fields">
+      <input id="gsa-api-key" type="password" name="apiKey" value="{{config.apiKey}}" autocomplete="off" spellcheck="false">
+    </div>
+    <p class="hint">{{localize "GATOSSA.Provider.ApiKeyHint"}}</p>
+  </div>
+
+  <div class="form-group">
+    <label for="gsa-model">{{localize "GATOSSA.Provider.Model"}}</label>
+    <div class="form-fields">
+      <input id="gsa-model" type="text" name="model" value="{{config.model}}" list="gsa-model-list" autocomplete="off" spellcheck="false">
+      <datalist id="gsa-model-list"></datalist>
+      <button type="button" data-action="listModels">
+        <i class="fa-solid fa-list"></i> {{localize "GATOSSA.Provider.ListModels"}}
+      </button>
+    </div>
+    <p class="hint">{{localize "GATOSSA.Provider.ModelHint"}}</p>
+  </div>
+
+  <fieldset>
+    <legend>{{localize "GATOSSA.Provider.Advanced"}}</legend>
+    <div class="form-group">
+      <label for="gsa-image-px">{{localize "GATOSSA.Provider.MaxImagePx"}}</label>
+      <div class="form-fields">
+        <select id="gsa-image-px" name="maxImagePx">{{selectOptions imageSizes selected=config.maxImagePx}}</select>
+      </div>
+      <p class="hint">{{localize "GATOSSA.Provider.MaxImagePxHint"}}</p>
+    </div>
+    <div class="form-group">
+      <label for="gsa-concurrency">{{localize "GATOSSA.Provider.Concurrency"}}</label>
+      <div class="form-fields">
+        <input id="gsa-concurrency" type="number" name="concurrency" value="{{config.concurrency}}" min="1" max="8" step="1">
+      </div>
+      <p class="hint">{{localize "GATOSSA.Provider.ConcurrencyHint"}}</p>
+    </div>
+    <div class="form-group">
+      <label for="gsa-timeout">{{localize "GATOSSA.Provider.Timeout"}}</label>
+      <div class="form-fields">
+        <input id="gsa-timeout" type="number" name="timeoutSec" value="{{config.timeoutSec}}" min="10" max="3600" step="10">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="gsa-json-mode">{{localize "GATOSSA.Provider.JsonMode"}}</label>
+      <div class="form-fields">
+        <input id="gsa-json-mode" type="checkbox" name="jsonMode" {{checked jsonMode}}>
+      </div>
+      <p class="hint">{{localize "GATOSSA.Provider.JsonModeHint"}}</p>
+    </div>
+  </fieldset>
+
+  <div class="gsa-test-row">
+    <button type="button" data-action="test">
+      <i class="fa-solid fa-vial"></i> {{localize "GATOSSA.Provider.Test"}}
+    </button>
+    <p class="gsa-status" hidden></p>
+  </div>
+</section>

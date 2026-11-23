@@ -1,0 +1,115 @@
+<div class="gsa-panel">
+  <header class="gsa-head">
+    {{#if scene}}
+      <div class="gsa-scene"><i class="fa-solid fa-map"></i> <strong>{{scene.name}}</strong> <span class="gsa-meta">{{scene.meta}}</span></div>
+    {{else}}
+      <p class="gsa-note warn">{{localize "GATOSSA.Panel.NoScene"}}</p>
+    {{/if}}
+    <div class="gsa-provider {{#unless provider.configured}}missing{{/unless}}">
+      <span><i class="fa-solid fa-plug"></i> {{provider.label}}</span>
+      <button type="button" data-action="openProvider">{{localize "GATOSSA.Panel.OpenProvider"}}</button>
+    </div>
+    {{#if scene}}
+      {{#unless scene.hasBackground}}<p class="gsa-note warn">{{localize "GATOSSA.Panel.NoBackground"}}</p>{{/unless}}
+      {{#unless scene.supported}}<p class="gsa-note warn">{{localize "GATOSSA.Panel.HexUnsupported"}}</p>{{/unless}}
+    {{/if}}
+  </header>
+
+  <fieldset>
+    <legend>{{localize "GATOSSA.Grid.Legend"}}</legend>
+    <p class="hint">{{localize "GATOSSA.Grid.Hint"}}</p>
+    <label class="gsa-check">
+      <input type="checkbox" name="aiGrid" {{checked opts.aiGrid}} {{#if busy}}disabled{{/if}}>
+      <span>{{localize "GATOSSA.Grid.UseAi"}}</span>
+    </label>
+    <div class="gsa-buttons">
+      <button type="button" data-action="detectGrid" {{#unless canDetect}}disabled{{/unless}}>
+        <i class="fa-solid {{#if busyGrid}}fa-spinner fa-spin{{else}}fa-border-all{{/if}}"></i> {{localize "GATOSSA.Grid.Detect"}}
+      </button>
+      <button type="button" data-action="applyGrid" {{#unless canApplyGrid}}disabled{{/unless}}>
+        <i class="fa-solid fa-check"></i> {{localize "GATOSSA.Grid.Apply"}}
+      </button>
+      <button type="button" data-action="undoGrid" {{#unless canUndoGrid}}disabled{{/unless}}>
+        <i class="fa-solid fa-rotate-left"></i> {{localize "GATOSSA.Grid.Undo"}}
+      </button>
+    </div>
+    {{#if grid}}
+      <dl class="gsa-result">
+        <dt>{{localize "GATOSSA.Grid.CellLabel"}}</dt><dd>{{grid.cell}}</dd>
+        <dt>{{localize "GATOSSA.Grid.ConfidenceLabel"}}</dt><dd><span class="gsa-badge {{grid.level}}">{{grid.confidence}}</span> {{grid.method}}</dd>
+        {{#if grid.verdict}}<dt>{{localize "GATOSSA.Grid.VerdictLabel"}}</dt><dd>{{grid.verdict}}{{#if grid.reason}} <span class="gsa-meta">— {{grid.reason}}</span>{{/if}}</dd>{{/if}}
+        {{#if grid.estimate}}<dt>{{localize "GATOSSA.Grid.EstimateLabel"}}</dt><dd>{{grid.estimate}}</dd>{{/if}}
+        <dt>{{localize "GATOSSA.Grid.ValuesLabel"}}</dt><dd>{{grid.values}}</dd>
+      </dl>
+    {{/if}}
+  </fieldset>
+
+  <fieldset>
+    <legend>{{localize "GATOSSA.Analyze.Legend"}}</legend>
+    <p class="hint">{{localize "GATOSSA.Analyze.Hint"}}</p>
+    <div class="gsa-checks">
+      <label class="gsa-check"><input type="checkbox" name="walls" {{checked opts.walls}} {{#if busy}}disabled{{/if}}><span>{{localize "GATOSSA.Analyze.Walls"}}</span></label>
+      <label class="gsa-check"><input type="checkbox" name="doors" {{checked opts.doors}} {{#if busy}}disabled{{/if}}><span>{{localize "GATOSSA.Analyze.Doors"}}</span></label>
+      <label class="gsa-check"><input type="checkbox" name="lights" {{checked opts.lights}} {{#if busy}}disabled{{/if}}><span>{{localize "GATOSSA.Analyze.Lights"}}</span></label>
+    </div>
+    <div class="gsa-grid2">
+      <label for="gsa-tile-cells" data-tooltip="{{localize "GATOSSA.Analyze.TileCellsHint"}}">{{localize "GATOSSA.Analyze.TileCells"}}</label>
+      <select id="gsa-tile-cells" name="tileCells" {{#if busy}}disabled{{/if}}>{{selectOptions tileChoices selected=opts.tileCells}}</select>
+      <label for="gsa-snap" data-tooltip="{{localize "GATOSSA.Analyze.SnapHint"}}">{{localize "GATOSSA.Analyze.SnapLabel"}}</label>
+      <select id="gsa-snap" name="snap" {{#if busy}}disabled{{/if}}>{{selectOptions snapChoices selected=opts.snap}}</select>
+      <label for="gsa-light-scale" data-tooltip="{{localize "GATOSSA.Analyze.LightScaleHint"}}">{{localize "GATOSSA.Analyze.LightScale"}}</label>
+      <input id="gsa-light-scale" type="number" name="lightScale" value="{{opts.lightScale}}" min="0.25" max="4" step="0.25" {{#if busy}}disabled{{/if}}>
+    </div>
+    <label class="gsa-check" data-tooltip="{{localize "GATOSSA.Analyze.OverviewHint"}}">
+      <input type="checkbox" name="overview" {{checked opts.overview}} {{#if busy}}disabled{{/if}}>
+      <span>{{localize "GATOSSA.Analyze.Overview"}}</span>
+    </label>
+
+    <div class="gsa-buttons">
+      {{#if busyAnalyze}}
+        <button type="button" data-action="cancel"><i class="fa-solid fa-stop"></i> {{localize "GATOSSA.Analyze.Cancel"}}</button>
+      {{else}}
+        <button type="button" data-action="analyze" {{#unless canAnalyze}}disabled{{/unless}}>
+          <i class="fa-solid fa-wand-magic-sparkles"></i> {{localize "GATOSSA.Analyze.Run"}}
+        </button>
+      {{/if}}
+      {{#if requests}}<span class="gsa-meta">{{localize "GATOSSA.Analyze.Requests" count=requests}}</span>{{/if}}
+    </div>
+
+    {{#if progress}}
+      <div class="gsa-progress"><div class="gsa-bar" style="width: {{progress.percent}}%"></div><span>{{progress.label}}</span></div>
+    {{/if}}
+
+    {{#if result}}
+      <div class="gsa-found">
+        <p><i class="fa-solid fa-eye"></i> {{result.summary}}</p>
+        {{#if result.failed}}<p class="gsa-note warn">{{result.failed}}</p>{{/if}}
+        <p class="hint">{{localize "GATOSSA.Analyze.PreviewHint"}}</p>
+        <label class="gsa-check">
+          <input type="checkbox" name="replace" {{checked opts.replace}}>
+          <span>{{localize "GATOSSA.Analyze.Replace"}}</span>
+        </label>
+        <div class="gsa-buttons">
+          <button type="button" data-action="applyResult" {{#unless canApplyResult}}disabled{{/unless}}>
+            <i class="fa-solid fa-check"></i> {{localize "GATOSSA.Analyze.Apply"}}
+          </button>
+          <button type="button" data-action="discardResult" {{#if busy}}disabled{{/if}}>
+            <i class="fa-solid fa-xmark"></i> {{localize "GATOSSA.Analyze.Discard"}}
+          </button>
+        </div>
+      </div>
+    {{/if}}
+  </fieldset>
+
+  <div class="gsa-foot">
+    <button type="button" data-action="removeGenerated" {{#unless canRemove}}disabled{{/unless}}>
+      <i class="fa-solid fa-trash"></i> {{localize "GATOSSA.Remove.Button" count=generated}}
+    </button>
+  </div>
+
+  {{#if log.length}}
+    <ol class="gsa-log">
+      {{#each log}}<li class="{{this.level}}">{{this.text}}</li>{{/each}}
+    </ol>
+  {{/if}}
+</div>

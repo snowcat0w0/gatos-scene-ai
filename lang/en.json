@@ -1,0 +1,181 @@
+{
+  "GATOSSA": {
+    "NeedLib": "Gato's Scene AI: The gatos-lib module must be enabled.",
+    "Settings": {
+      "ProviderMenu": {
+        "Name": "AI Connection",
+        "Label": "AI Connection Settings",
+        "Hint": "Choose the AI service (API key) or local LLM server that will read the map. This setting is saved only in the browser you are using now."
+      }
+    },
+    "Control": {
+      "Open": "Scene AI: Auto-set grid, walls, and lights"
+    },
+    "Common": {
+      "Cancel": "Cancel"
+    },
+    "Panel": {
+      "Title": "Scene AI",
+      "NoScene": "No scene is open on the canvas.",
+      "Meta": "{width}×{height}px · grid {size}px",
+      "NoProvider": "AI connection is not set up",
+      "OpenProvider": "Connection settings",
+      "NoBackground": "This scene has no background image. Add a background, then open it again.",
+      "HexUnsupported": "Hex grid scenes do not support wall and light analysis. Switch to a square grid or no grid."
+    },
+    "Provider": {
+      "Title": "Scene AI — AI Connection Settings",
+      "Intro": "You need a vision model that can view images. Requests are sent directly from this browser to the address below, and map images are sent to that service.",
+      "Preset": "Service",
+      "Type": "API format",
+      "TypeHint": "Selecting a service sets this automatically. For a server you entered yourself, choose the format that server follows.",
+      "BaseUrl": "Server address",
+      "LocalHint": "Local servers must allow browser requests (CORS). For Ollama, add the Foundry address to the OLLAMA_ORIGINS environment variable; for LM Studio, enable CORS in the server settings. The llama.cpp server allows it by default.",
+      "ApiKey": "API key",
+      "ApiKeyHint": "Stored only in this browser's storage and not passed to the world or players. Leave empty for local servers.",
+      "Model": "Model",
+      "ModelHint": "Type a model name or click 'List' to choose from the models the server provides.",
+      "ListModels": "List",
+      "Advanced": "Advanced",
+      "MaxImagePx": "Max image size (px)",
+      "MaxImagePxHint": "The length of the longer side of one tile sent to the AI. Larger is more accurate but slower and more expensive.",
+      "Concurrency": "Concurrent requests",
+      "ConcurrencyHint": "1 is recommended for local LLMs.",
+      "Timeout": "Response timeout (seconds)",
+      "JsonMode": "Request JSON mode",
+      "JsonModeHint": "If the server supports it, forces JSON-formatted responses. On servers that do not support it, this is turned off automatically and the request is retried.",
+      "Test": "Test connection",
+      "Save": "Save",
+      "Listing": "Loading model list…",
+      "Listed": "Loaded {count} models. Click the model field to choose one.",
+      "ListedNone": "The server did not report any models. Please type a name manually.",
+      "Testing": "Sending a test image…",
+      "TestOk": "Connected: the {model} model read the image correctly.",
+      "TestNoVision": "A response came back, but the image does not seem to have been read. Check that this is a vision model. (Response: {answer})",
+      "Presets": {
+        "Anthropic": "Anthropic (Claude)",
+        "Openai": "OpenAI",
+        "Gemini": "Google Gemini",
+        "Openrouter": "OpenRouter",
+        "Ollama": "Ollama (local)",
+        "Lmstudio": "LM Studio (local)",
+        "Llamacpp": "llama.cpp server (local)",
+        "Custom": "Custom"
+      },
+      "Types": {
+        "Openai": "OpenAI-compatible (Chat Completions)",
+        "Anthropic": "Anthropic Messages",
+        "Gemini": "Google Gemini"
+      }
+    },
+    "Grid": {
+      "Legend": "1. Align Grid",
+      "Hint": "Finds the grid drawn on the map and aligns the Foundry grid to it. Grid size, scene size, and background position will change.",
+      "UseAi": "Verify result with AI (if the map has no grid, AI estimates the scale)",
+      "Detect": "Detect grid",
+      "Apply": "Apply to scene",
+      "Undo": "Undo",
+      "CellLabel": "One map cell",
+      "Cell": "{x} × {y}px",
+      "ConfidenceLabel": "Confidence",
+      "Confidence": {
+        "High": "High",
+        "Medium": "Medium",
+        "Low": "Low"
+      },
+      "Method": {
+        "Signal": "Image analysis",
+        "SignalAi": "Image analysis + AI check",
+        "Ai": "AI estimate"
+      },
+      "VerdictLabel": "AI verdict",
+      "Verdict": {
+        "Ok": "Matches the map grid",
+        "Half": "Cells were half size → corrected",
+        "Double": "Cells were double size → corrected",
+        "Shifted": "Size is correct but position appears offset",
+        "Wrong": "Does not match the map grid",
+        "Nogrid": "No grid drawn; scale looks plausible"
+      },
+      "EstimateLabel": "AI estimate",
+      "Estimate": "{across} cells across × {down} cells down",
+      "ValuesLabel": "Values to apply",
+      "Values": "Grid {size}px · scene {width}×{height}px · background offset ({offsetX}, {offsetY})",
+      "Start": "Finding grid on map…",
+      "StartAi": "Finding grid on map and verifying with AI…",
+      "NotFound": "Could not find a grid. The map may be too small or the background cannot be read.",
+      "Found": "Grid found. Click 'Apply to scene' to apply it.",
+      "FoundLow": "No clear grid is visible, so the result may not be reliable. Turn on 'Verify result with AI' and try again.",
+      "FoundLowAi": "The drawn grid is not clear, so the scale estimated by AI was used. Please check visually after applying.",
+      "FoundDoubt": "A grid was found, but the AI judged it to look misaligned. After applying, drag it into alignment yourself with Grid Align.",
+      "ConfirmTitle": "Apply Grid",
+      "ConfirmPlaced": "This scene already has {count} placed objects such as walls or tokens. Changing the grid and scene size may misalign them with the map. Continue?",
+      "Applied": "Grid applied: {size}px, scene {width}×{height}px, background offset ({offsetX}, {offsetY}).",
+      "Undone": "Grid reverted to the values before applying."
+    },
+    "Analyze": {
+      "Legend": "2. Find Walls, Doors, and Lights",
+      "Hint": "Splits the map into tiles, shows them to the AI, and receives wall, door, and light positions. Results are first shown as a preview on the canvas. Align the grid first for best accuracy.",
+      "Walls": "Walls",
+      "Doors": "Doors and windows",
+      "Lights": "Lights",
+      "TileCells": "Tile size (cells)",
+      "TileCellsHint": "The area shown to the AI at once. Smaller is more accurate but increases the number of requests.",
+      "SnapLabel": "Snap coordinates",
+      "SnapHint": "Sets the grid unit the AI coordinates snap to. Dungeons with mostly right angles work best with half cells; organic cave maps work better with quarter cells or no snapping.",
+      "Snap": {
+        "Full": "Full cell",
+        "Half": "Half cell",
+        "Quarter": "1/4 cell",
+        "None": "No snapping"
+      },
+      "LightScale": "Light radius multiplier",
+      "LightScaleHint": "Defaults are 4 cells for bright light and 8 cells for dim light for a torch (20/40 ft on a 5 ft grid).",
+      "Overview": "First survey the whole map (adds 1 request)",
+      "OverviewHint": "Determines the map type and how walls and doors are drawn first, then informs each tile analysis.",
+      "Run": "Start analysis",
+      "Cancel": "Stop",
+      "Requests": "{count} AI requests",
+      "PreviewHint": "Preview is shown on the canvas: yellow = walls, purple = doors, red = secret doors, sky blue = windows, circles = lights.",
+      "Replace": "Remove walls and lights previously created by AI before applying",
+      "Apply": "Apply to scene",
+      "Discard": "Discard",
+      "Summary": "Found {walls} walls · {doors} doors · {lights} lights.",
+      "Failed": "{failed} of {tiles} tiles were left out because the AI response could not be read.",
+      "Start": "Starting analysis: {model}, {count} requests.",
+      "Done": "Analysis complete: {walls} walls, {doors} doors, {lights} lights. Check the preview on the canvas.",
+      "TileFailed": "Tile {index} failed: {message}",
+      "Usage": "Tokens used: input {input}, output {output}.",
+      "Applied": "Applied to scene: {walls} walls, {doors} doors, {lights} lights (deleted {removed} previous generated objects).",
+      "Discarded": "Analysis results discarded."
+    },
+    "Progress": {
+      "Overview": "Surveying the whole map…",
+      "Tiles": "Analyzing tiles {done}/{total}",
+      "Cancelled": "Stopped."
+    },
+    "Remove": {
+      "Button": "Remove AI-created walls and lights ({count})",
+      "Title": "Delete AI-Generated Objects",
+      "Confirm": "This will delete the {walls} walls and doors and {lights} lights that Scene AI created in this scene. Walls and lights you drew yourself will be kept.",
+      "Yes": "Delete",
+      "Done": "Removed {count} AI-created walls and lights."
+    },
+    "Error": {
+      "Network": "Could not connect to the server. Check that the address is correct, the server is running, and, for local servers, that browser requests (CORS) are allowed. OpenAI also reports a wrong API key this way.",
+      "Timeout": "The response timed out. Increase the timeout in connection settings or reduce the tile size.",
+      "Aborted": "Request stopped.",
+      "Auth": "The API key was rejected. Check that the key matches the service.",
+      "Notfound": "Address or model not found. Check the server address and model name.",
+      "Rate": "Rate limit reached. Try again shortly or reduce the number of concurrent requests.",
+      "Refusal": "The model refused this request.",
+      "Empty": "The model sent an empty response.",
+      "Config": "AI connection settings are incomplete. Check the server address and model.",
+      "Http": "Server error {status}: {detail}",
+      "ImageLoad": "Failed to load the background image.",
+      "ImageTainted": "The background image is hosted on another site that does not allow reading it (CORS). Move the image into the Foundry data folder.",
+      "JsonTruncated": "The model response was cut off partway. Try reducing the tile size.",
+      "JsonInvalid": "No result (JSON) was found in the model response."
+    }
+  }
+}
