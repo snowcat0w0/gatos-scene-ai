@@ -52,14 +52,15 @@ export async function detectSceneGrid(scene, { chat, signal, onStep = () => {} }
   const image = { width: source.width, height: source.height };
 
   onStep("measure");
-  let detection = toImagePixels(detectGrid(gray), gray);
+  const measured = toImagePixels(detectGrid(gray), gray);
+  let detection = measured;
   let method = "signal";
   let verdict = null;
   let reason = null;
   let estimate = null;
 
-  if (chat && detection && detection.confidence !== "low") {
-    // Two rounds: a "half"/"double" verdict changes the period, and the new grid is worth one more look.
+  /** Show the model the current grid on a crop. A "half"/"double" verdict changes the period and earns a second look. */
+  const verify = async () => {
     for (let round = 0; round < 2; round++) {
       onStep("verify");
       const crop = renderGridCheck(source, detection, gray);
@@ -71,18 +72,20 @@ export async function detectSceneGrid(scene, { chat, signal, onStep = () => {} }
       } catch (err) {
         // An unreadable verdict is no verdict: keep the measured grid.
         if (!(err instanceof JsonExtractError)) throw err;
-        break;
+        return;
       }
       verdict = typeof reply?.verdict === "string" ? reply.verdict.toLowerCase() : null;
       reason = typeof reply?.reason === "string" ? reply.reason : null;
       method = "signal+ai";
-      if (verdict !== "half" && verdict !== "double") break;
+      if (verdict !== "half" && verdict !== "double") return;
       const target = detection.periodX * gray.scaleX * (verdict === "half" ? 2 : 0.5);
       const next = toImagePixels(detectGrid(gray, { hint: target }), gray);
-      if (!next) break;
+      if (!next) return;
       detection = next;
     }
-  }
+  };
+
+  if (chat && detection && detection.confidence !== "low") await verify();
 
   if (chat && (!detection || detection.confidence === "low" || verdict === "wrong")) {
     onStep("estimate");
@@ -99,12 +102,23 @@ export async function detectSceneGrid(scene, { chat, signal, onStep = () => {} }
     const down = Number(reply?.cellsDown);
     if (across >= 2 && down >= 2) {
       estimate = { hasGrid: !!reply.hasGrid, cellsAcross: across, cellsDown: down, basis: String(reply.basis ?? "") };
-      // The count fixes the scale; where a drawn grid exists, the signal fit near that scale fixes the rest.
       const period = (image.width / across + image.height / down) / 2;
-      const near = toImagePixels(detectGrid(gray, { hint: period * gray.scaleX }), gray);
-      if (near && near.confidence !== "low") {
-        detection = near;
+      // The model's count is a rough scale, a measurement is a measurement. A faint grid that was measured with
+      // low confidence and lands near the count is kept as it is; otherwise the fit is repeated near the count.
+      // Only when neither shows a grid does the count itself become the answer (and then nothing fixes where
+      // the lines are).
+      const usable = (d) => !!d && (d.confidence !== "low" || d.strength >= 0.15);
+      const agrees = (d) => !!d && d.strength >= 0.1 && Math.abs(d.periodX / period - 1) <= 0.25;
+      const near =
+        verdict !== "wrong" && agrees(measured)
+          ? measured
+          : toImagePixels(detectGrid(gray, { hint: period * gray.scaleX }), gray);
+      verdict = null;
+      reason = null;
+      if (usable(near) || agrees(near)) {
+        detection = near.confidence === "low" ? { ...near, confidence: "medium" } : near;
         method = "signal+ai";
+        await verify();
       } else {
         detection = {
           periodX: period,
@@ -113,12 +127,12 @@ export async function detectSceneGrid(scene, { chat, signal, onStep = () => {} }
           phaseY: 0,
           strength: 0,
           score: 0,
+          z: 0,
           confidence: "low",
           candidates: [],
         };
         method = "ai";
       }
-      verdict = null;
     }
   }
 
@@ -134,11 +148,16 @@ export async function detectSceneGrid(scene, { chat, signal, onStep = () => {} }
  * (`sceneX = paddingX - offsetX`, and paddingX is a multiple of the grid size).
  * @param {{periodX, periodY, phaseX, phaseY}} det   image pixels
  * @param {{width, height}} image
- * @param {number} [minSize]                         smallest grid size Foundry accepts
+ * @param {object} [options]
+ * @param {number} [options.minSize=50]        cells narrower than this on the image are scaled up
+ * @param {number} [options.scaledSize=100]    grid size used when scaling up
  * @returns {{size, width, height, offsetX, offsetY}}
  */
-export function gridValuesFor(det, image, minSize = 50) {
-  const size = Math.max(minSize, Math.round((det.periodX + det.periodY) / 2));
+export function gridValuesFor(det, image, { minSize = 50, scaledSize = 100 } = {}) {
+  // A map with cells of 50 px or more keeps its own resolution. A small scan (17 px cells) is enlarged to a
+  // 100 px grid: tokens stay legible, and the whole-pixel background offset is then fine enough to matter.
+  const period = (det.periodX + det.periodY) / 2;
+  const size = period >= minSize ? Math.round(period) : scaledSize;
   const kx = size / det.periodX;
   const ky = size / det.periodY;
   const wrap = (v) => {

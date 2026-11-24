@@ -5,6 +5,8 @@ export const mod = defineModule(MODULE_ID, { langPrefix: "GATOSSA" });
 
 /** Flag on walls and lights this module created: `{ run: "<id>" }`. */
 export const FLAG_GENERATED = "generated";
+/** On a region: the floor inside lies at the region's bottom elevation (ground.js). */
+export const FLAG_GROUND = "ground";
 /** Flag on the scene: the grid settings before the last "apply grid", for undo. */
 export const FLAG_GRID_BACKUP = "gridBackup";
 
@@ -29,6 +31,18 @@ export const DEFAULT_PANEL_OPTIONS = Object.freeze({
   walls: true,
   doors: true,
   lights: true,
+  // "trace": the model marks walkable cells and the outline is traced in the pixels; "coords": the model
+  // gives wall coordinates itself.
+  method: "coords",
+  // Pull walls given as coordinates onto the line drawn in the picture.
+  refine: true,
+  // What a cliff edge becomes: "invisible" (blocks movement only), "terrain" (limits sight), "wall", "height"
+  // (a wall with the upper floor's height as its top, for the Wall Height module), "none".
+  ledgeMode: "invisible",
+  // Work out the height of the floor on both sides of ledges, stairs and slopes, and make regions of it.
+  heights: true,
+  // Height of a ledge or step the map gives no number for, in cells.
+  dropCells: 2,
   overview: true,
   tileCells: 12,
   snap: 0.5,

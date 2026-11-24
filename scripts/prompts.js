@@ -74,6 +74,63 @@ const WALLS = [
     "shadows, floor patterns, water.",
 ].join("\n");
 
+const FLOOR = [
+  "FLOOR — where creatures can walk, as spans read off the numbered lines.",
+  "Take the map one band at a time. A band is the strip between two neighbouring horizontal lines and is named by " +
+    'both of them: "3-4" is the strip between horizontal lines 3 and 4.',
+  "For every band with walkable floor, list its spans of floor from left to right as [from, to]: the floor begins " +
+    "at x = from and ends at x = to, read against the numbered vertical lines like every other x. [2, 6] is floor " +
+    "all the way from vertical line 2 to vertical line 6. Use .5 where the floor begins or ends about halfway " +
+    "between two lines. Leave out bands without floor.",
+  "Where the edge of the floor cuts through a band at an angle, end the span where floor fills about half of the " +
+    "band's height.",
+  "Walkable: rooms, corridors, cave floor, doorways, stairs, ramps, bridges, ledges, shallow water.",
+  "Not walkable: solid rock and earth, the mass of thick walls, the blank or decorated area around the map, " +
+    "lettering outside rooms, deep pits and chasms.",
+  "Follow every passage band by band, however narrow, so that areas connected on the map stay connected in your " +
+    "list. Never close an opening that the map shows open.",
+].join("\n");
+
+const THIN_WALLS = [
+  "WALLS — only thin walls, which the floor list cannot express: a wall, fence or partition drawn as a line or a " +
+    "thin band with walkable cells on both sides of it (interior walls of a building, the wall between two rooms " +
+    "that share a grid line, railings, bars).",
+  "Do NOT trace where floor meets solid rock or the outside of the map: that outline is computed from the floor " +
+    "list. If the map has no thin walls, give an empty array.",
+  "Trace each thin wall as a polyline of [x, y] points along the middle of the line; a straight wall needs 2 " +
+    "points. Leave an opening where a door, window or archway is.",
+  "NOT walls: the magenta overlay, the map's own grid lines, furniture, rugs, rubble, stairs, shadows, floor " +
+    "patterns, water.",
+].join("\n");
+
+const LEDGES = [
+  "LEDGES — changes of height that are not walls: cliff edges, drop-offs, the rim of a pit or a raised platform, " +
+    "steep slopes. Maps usually draw them as a line with hatching or short tick marks on the lower side.",
+  "Trace each as a polyline of [x, y] points along the edge. Stairs, gentle ramps and arrows marking " +
+    '"up"/"down" are not ledges.',
+].join("\n");
+
+const LEDGE_HEIGHTS = [
+  "LEDGES — changes of height that are not walls: cliff edges, drop-offs, the rim of a pit or a raised platform, " +
+    "steep slopes. Maps usually draw them as a line with hatching or short tick marks on the lower side.",
+  'For each: "line" is a polyline of [x, y] points along the edge, carried on until it meets a wall or another ' +
+    "ledge at both ends whenever the map shows that.",
+  '"high" is one point about half a cell away from the line, on its HIGHER side: on top of the cliff, on the ' +
+    "raised platform, on the ground around a pit.",
+  '"drop" is the height difference in the map\'s units when the map states it (a label such as "10 ft"); ' +
+    "leave it out when it does not.",
+].join("\n");
+
+const STEPS = [
+  "STEPS — where the floor changes height and one can still walk: stairs, ramps, slopes, and passages marked " +
+    '"up" or "down".',
+  'For each: "line" is one straight line across the passage, from one side wall to the other, at the middle of ' +
+    "the stairs or slope.",
+  '"high" is one point about half a cell away from that line on the side that is HIGHER: where the stairs lead ' +
+    'up to, where an "up" arrow points, where a "down" arrow comes from.',
+  '"rise" is the height difference in the map\'s units when the map states it; leave it out when it does not.',
+].join("\n");
+
 const DOORS = [
   "DOORS — each door, window or other closable opening in a wall, as one straight segment from point a to point b " +
     "spanning the opening, with both ends touching the walls beside it.",
@@ -96,7 +153,9 @@ const LIGHTS = [
  * @param {object} p
  * @param {number} p.cols          overlay cells across
  * @param {number} p.rows          overlay cells down
- * @param {{walls: boolean, doors: boolean, lights: boolean}} p.want
+ * @param {{floor?: boolean, walls: boolean, ledges?: boolean, heights?: boolean, doors: boolean, lights: boolean}} p.want
+ *        floor: ask for the spans of walkable floor (the outline is then traced in the pixels and "walls" means
+ *        thin walls only); heights: also ask which side of every ledge is higher, and for stairs and slopes
  * @param {string} [p.context]     summary from the overview pass
  * @param {string} [p.cellSize]    e.g. "5 ft"
  * @param {{left, right, top, bottom}} [p.continues]  whether the map goes on beyond that edge of the picture
@@ -122,9 +181,21 @@ export function tilePrompt({ cols, rows, want, context, cellSize, continues = {}
   if (context) lines.push("", `About this map: ${context}`);
   lines.push("", "Find in this section:");
   const shape = [];
+  if (want.floor) {
+    lines.push("", FLOOR);
+    shape.push('"floor": {"0-1": [[3, 8]], "1-2": [[2.5, 9], [10, 12]]}');
+  }
   if (want.walls) {
-    lines.push("", WALLS);
+    lines.push("", want.floor ? THIN_WALLS : WALLS);
     shape.push('"walls": [[[x, y], [x, y], [x, y]], [[x, y], [x, y]]]');
+  }
+  if (want.ledges && want.heights) {
+    lines.push("", LEDGE_HEIGHTS, "", STEPS);
+    shape.push('"ledges": [{"line": [[x, y], [x, y], [x, y]], "high": [x, y]}]');
+    shape.push('"steps": [{"line": [[x, y], [x, y]], "high": [x, y]}]');
+  } else if (want.ledges) {
+    lines.push("", LEDGES);
+    shape.push('"ledges": [[[x, y], [x, y], [x, y]]]');
   }
   if (want.doors) {
     lines.push("", DOORS);

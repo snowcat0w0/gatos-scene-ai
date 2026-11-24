@@ -260,9 +260,9 @@ const toPoint = (p) => {
   return null;
 };
 
-/** A wall entry as a list of points: accepts [[x,y],…], [x1,y1,x2,y2] and {points:[…]}. */
+/** A wall entry as a list of points: accepts [[x,y],…], [x1,y1,x2,y2] and {line|points:[…]}. */
 function toPolyline(entry) {
-  if (entry && !Array.isArray(entry) && typeof entry === "object") entry = entry.points ?? entry.c ?? entry.path;
+  if (entry && !Array.isArray(entry) && typeof entry === "object") entry = entry.line ?? entry.points ?? entry.c ?? entry.path;
   if (!Array.isArray(entry)) return null;
   if (entry.length >= 4 && entry.every((v) => isNum(toNum(v)))) {
     const n = entry.map(toNum);
@@ -274,6 +274,121 @@ function toPolyline(entry) {
   return pts.length >= 2 ? pts : null;
 }
 
+/**
+ * Walkable cells of a tile reply as [column, row] pairs in tile cells.
+ *
+ * The reply lists, for each band between two horizontal lines, the spans of floor in grid-line units — the same
+ * numbers the overlay shows and every other coordinate uses: {"3-4": [[2, 7.5], [9, 10]]} is floor from vertical
+ * line 2 to 7.5 and from 9 to 10 in the band between horizontal lines 3 and 4. (Asking for cell numbers instead
+ * made models convert line numbers to cell numbers, and slip by one.) A cell counts when a span covers half of it;
+ * a span too short or too unluckily placed to win any cell still gets the cell it covers most, so that a narrow
+ * passage is never lost.
+ * Also accepted: the band named by its upper line alone ("3"), a single number or a span of zero length for the
+ * one cell that starts there, and rows drawn as strings ("..##..": "." = floor).
+ */
+export function floorCells(spec, cols, rows) {
+  const cells = [];
+  const add = (row, c) => {
+    if (c >= 0 && c < cols) cells.push([c, row]);
+  };
+  const addSpan = (row, from, to) => {
+    if (!Number.isInteger(row) || row < 0 || row >= rows) return;
+    const lo = Math.max(0, Math.min(from, to));
+    const hi = Math.min(cols, Math.max(from, to));
+    if (Math.max(from, to) - Math.min(from, to) < 1e-6) return add(row, Math.floor(from + 1e-6));
+    if (hi <= lo) return;
+    let any = false;
+    let best = -1;
+    let bestCover = 0;
+    for (let c = Math.floor(lo + 1e-6); c < hi - 1e-6; c++) {
+      const cover = Math.min(hi, c + 1) - Math.max(lo, c);
+      if (cover >= 0.5 - 1e-6) {
+        add(row, c);
+        any = true;
+      } else if (cover > bestCover) {
+        bestCover = cover;
+        best = c;
+      }
+    }
+    if (!any && best >= 0) add(row, best);
+  };
+  const addRow = (row, value) => {
+    if (typeof value === "string") {
+      for (let c = 0; c < value.length; c++) if (".fF1".includes(value[c])) addSpan(row, c, c + 1);
+      return;
+    }
+    if (!Array.isArray(value)) return;
+    if (value.length === 2 && value.every((v) => isNum(toNum(v)))) return addSpan(row, toNum(value[0]), toNum(value[1]));
+    for (const run of value) {
+      if (isNum(toNum(run))) addSpan(row, toNum(run), toNum(run));
+      else if (Array.isArray(run) && run.length >= 1) {
+        const a = toNum(run[0]);
+        const b = toNum(run[run.length - 1]);
+        if (isNum(a) && isNum(b)) addSpan(row, a, b);
+      }
+    }
+  };
+  // "3-4", "3–4", "3" and "3.5" all name the band below horizontal line 3.
+  const bandOf = (key) => {
+    const m = /^\s*(\d+(?:\.\d+)?)/.exec(String(key));
+    return m ? Math.floor(Number(m[1]) + 1e-6) : NaN;
+  };
+  if (Array.isArray(spec)) spec.forEach((value, row) => addRow(row, value));
+  else if (spec && typeof spec === "object") for (const [key, value] of Object.entries(spec)) addRow(bandOf(key), value);
+  // The same cell may be listed twice.
+  const seen = new Set();
+  return cells.filter(([c, r]) => !seen.has(r * cols + c) && seen.add(r * cols + c));
+}
+
+/**
+ * Which side of a polyline a point lies on: the sign of the cross product of the direction of the nearest piece
+ * and the vector to the point (0 when there is no point). The same sign holds for every piece of the polyline as
+ * long as it keeps its direction, which translating and clipping do.
+ */
+export function sideOf(points, p) {
+  if (!p) return 0;
+  let best = Infinity;
+  let side = 0;
+  for (let i = 0; i + 1 < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[i + 1];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < EPS) continue;
+    const t = Math.max(0, Math.min(1, ((p[0] - x1) * dx + (p[1] - y1) * dy) / len2));
+    const dist = Math.hypot(p[0] - x1 - t * dx, p[1] - y1 - t * dy);
+    if (dist < best) {
+      best = dist;
+      side = Math.sign(dx * (p[1] - y1) - dy * (p[0] - x1));
+    }
+  }
+  return side;
+}
+
+/**
+ * Merge colinear height lines ({c, side, drop}) that agree on which side is higher and by how much.
+ * @param {Array<{c: number[], side: number, drop: number|null}>} lines
+ * @param {number} [minLength]
+ */
+export function mergeHeightLines(lines, minLength = EPS) {
+  const groups = new Map();
+  for (const { c, side, drop } of lines) {
+    const line = lineOf(c);
+    if (!line) continue;
+    // Merged segments come out in the canonical direction of their line; a segment running the other way has
+    // its higher side on the other hand.
+    const forward = (c[2] - c[0]) * line.dx + (c[3] - c[1]) * line.dy > 0;
+    const canon = forward ? side : -side || 0;
+    const key = `${canon}|${drop}`;
+    if (!groups.has(key)) groups.set(key, { side: canon, drop, segs: [] });
+    groups.get(key).segs.push(c);
+  }
+  const out = [];
+  for (const g of groups.values()) for (const c of mergeColinear(g.segs, minLength)) out.push({ c, side: g.side, drop: g.drop });
+  return out;
+}
+
 const DOOR_TYPES = new Set(["door", "secret", "window"]);
 export const LIGHT_KIND_NAMES = ["torch", "candle", "lantern", "fire", "magic", "lava", "lamp", "window"];
 
@@ -283,7 +398,11 @@ export const LIGHT_KIND_NAMES = ["torch", "candle", "lantern", "fire", "magic", 
  * @param {{view: object, core: object}} tile
  * @param {object} options
  * @param {number} options.snapStep   snap step in cells
- * @returns {{walls: number[][], doors: Array<{c: number[], type: string}>, lights: Array<{x, y, kind, color}>}}
+ * @returns {{walls: number[][], ledges: Array<{c: number[], side: number, drop: number|null}>,
+ *            steps: Array<{c: number[], side: number, drop: number|null}>,
+ *            doors: Array<{c: number[], type: string}>,
+ *            lights: Array<{x, y, kind, color}>, floor: number[][]}}  floor: [col, row] map cells;
+ *            ledges / steps: `side` says which side is higher (see sideOf), `drop` by how much, if stated
  */
 export function normalizeTileReply(reply, tile, { snapStep = 0.5 } = {}) {
   const { view, core } = tile;
@@ -304,6 +423,33 @@ export function normalizeTileReply(reply, tile, { snapStep = 0.5 } = {}) {
       if (clipped) walls.push(clipped);
     }
   }
+
+  // Ledges follow the drawing freely (a cliff edge is never on the grid), so they are not snapped. With each
+  // comes, when the model gave it, which side is higher and by how much. Steps (stairs, slopes) have the same shape.
+  const toMapFine = ([x, y]) => [snap(view.x0 + x, 0), snap(view.y0 + y, 0)];
+  const heightLines = (list) => {
+    const out = [];
+    for (const entry of Array.isArray(list) ? list : []) {
+      const line = toPolyline(entry);
+      if (!line) continue;
+      const pts = line.filter(inView).map(clampView);
+      const info = entry && !Array.isArray(entry) && typeof entry === "object" ? entry : {};
+      const side = sideOf(pts, toPoint(info.high ?? info.higher ?? info.up));
+      const amount = Math.abs(toNum(info.drop ?? info.rise ?? info.height));
+      const drop = isNum(amount) && amount > 0 ? amount : null;
+      for (const seg of polylineSegments(pts.map(toMapFine))) {
+        const clipped = clipSegment(seg, core);
+        if (clipped) out.push({ c: clipped, side, drop });
+      }
+    }
+    return out;
+  };
+  const ledges = heightLines(reply?.ledges);
+  const steps = heightLines(reply?.steps);
+
+  const floor = floorCells(reply?.floor, vw, vh)
+    .map(([c, r]) => [view.x0 + c, view.y0 + r])
+    .filter(([c, r]) => c >= core.x0 && c < core.x1 && r >= core.y0 && r < core.y1);
 
   const doors = [];
   for (const entry of Array.isArray(reply?.doors) ? reply.doors : []) {
@@ -340,5 +486,5 @@ export function normalizeTileReply(reply, tile, { snapStep = 0.5 } = {}) {
     lights.push({ x, y, kind, color });
   }
 
-  return { walls, doors, lights };
+  return { walls, ledges, steps, doors, lights, floor };
 }

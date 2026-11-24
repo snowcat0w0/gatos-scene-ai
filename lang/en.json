@@ -2,11 +2,18 @@
   "GATOSSA": {
     "NeedLib": "Gato's Scene AI: The gatos-lib module must be enabled.",
     "Settings": {
+      "GroundFollow": {
+        "Name": "Match token elevation to height regions",
+        "Hint": "Sets the elevation of a token that ends a move inside a height region made by Scene AI to that region's height. Flying tokens (whose elevation differs from the floor height) are left alone."
+      },
       "ProviderMenu": {
         "Name": "AI Connection",
         "Label": "AI Connection Settings",
         "Hint": "Choose the AI service (API key) or local LLM server that will read the map. This setting is saved only in the browser you are using now."
       }
+    },
+    "Heights": {
+      "RegionName": "Height {amount}"
     },
     "Control": {
       "Open": "Scene AI: Auto-set grid, walls, and lights"
@@ -115,14 +122,14 @@
     },
     "Analyze": {
       "Legend": "2. Find Walls, Doors, and Lights",
-      "Hint": "Splits the map into tiles, shows them to the AI, and receives wall, door, and light positions. Results are first shown as a preview on the canvas. Align the grid first for best accuracy.",
+      "Hint": "Splits the map into tiles and asks the AI where walls, doors, ledges and lights are. Results are first shown as a preview on the canvas. Align the grid first for best accuracy.",
       "Walls": "Walls",
       "Doors": "Doors and windows",
       "Lights": "Lights",
       "TileCells": "Tile size (cells)",
       "TileCellsHint": "The area shown to the AI at once. Smaller is more accurate but increases the number of requests.",
       "SnapLabel": "Snap coordinates",
-      "SnapHint": "Sets the grid unit the AI coordinates snap to. Dungeons with mostly right angles work best with half cells; organic cave maps work better with quarter cells or no snapping.",
+      "SnapHint": "Sets the grid unit that AI-given coordinates snap to (doors, thin walls, and walls in the \"AI coordinates\" method). It does not apply to wall lines drawn by pixel outline tracing. With \"Fit wall lines to the picture\" on, walls are then moved once more onto the drawn lines.",
       "Snap": {
         "Full": "Full cell",
         "Half": "Half cell",
@@ -131,35 +138,65 @@
       },
       "LightScale": "Light radius multiplier",
       "LightScaleHint": "Defaults are 4 cells for bright light and 8 cells for dim light for a torch (20/40 ft on a 5 ft grid).",
+      "HeightsOption": "Make height regions (work out elevation)",
+      "HeightsHint": "Also asks the AI which side of each ledge is higher and where stairs and slopes are, then works out the height of every area of floor between those lines and the walls and makes a Region of it. A token that ends a move inside a region gets that height as its elevation. Change a height under \"Elevation Bottom\" in the region's configuration. Sends no extra AI requests.",
+      "HeightsSummary": "{areas} height regions.",
+      "Heights": "Worked out {areas} height regions ({resolved} ledges and slopes with a height, {unresolved} without).",
+      "HeightConflicts": "The heights contradict each other in {conflicts} places. Check the numbers in the preview and correct them in the region configuration after applying.",
+      "NoWallHeight": "The Wall Height module is not active, so ledge walls got no height and were made as invisible walls.",
+      "DropCells": "Default height difference (cells)",
+      "DropCellsHint": "Height difference of a ledge, stair or slope the map gives no number for. In cells: on a 5 ft grid, 2 cells are 10 ft.",
+      "Refine": "Fit wall lines to the picture",
+      "RefineHint": "Moves walls the AI gave as coordinates onto the line actually drawn in the picture, within half a cell. Only positions change: what is connected stays connected and what is open stays open. Stretches without a clear line are left alone. Sends no extra AI requests. Turn it off if walls stick to the wrong lines.",
+      "Refined": "Fitted {moved} of {chains} wall stretches to lines in the picture.",
       "Overview": "First survey the whole map (adds 1 request)",
       "OverviewHint": "Determines the map type and how walls and doors are drawn first, then informs each tile analysis.",
       "Run": "Start analysis",
       "Cancel": "Stop",
       "Requests": "{count} AI requests",
-      "PreviewHint": "Preview is shown on the canvas: yellow = walls, purple = doors, red = secret doors, sky blue = windows, circles = lights.",
+      "PreviewHint": "A preview is shown on the canvas: yellow = walls, orange = ledges, violet = doors, red = secret doors, cyan = windows, circles = lights, tinted patches = height regions (the number is the height), green = stairs and slopes.",
       "Replace": "Remove walls and lights previously created by AI before applying",
       "Apply": "Apply to scene",
       "Discard": "Discard",
-      "Summary": "Found {walls} walls · {doors} doors · {lights} lights.",
+      "Summary": "Found {walls} walls · {ledges} ledges · {doors} doors · {lights} lights.",
       "Failed": "{failed} of {tiles} tiles were left out because the AI response could not be read.",
       "Start": "Starting analysis: {model}, {count} requests.",
-      "Done": "Analysis complete: {walls} walls, {doors} doors, {lights} lights. Check the preview on the canvas.",
+      "Done": "Analysis complete: {walls} walls, {ledges} ledges, {doors} doors, {lights} lights. Check the preview on the canvas.",
       "TileFailed": "Tile {index} failed: {message}",
       "Usage": "Tokens used: input {input}, output {output}.",
-      "Applied": "Applied to scene: {walls} walls, {doors} doors, {lights} lights (deleted {removed} previous generated objects).",
-      "Discarded": "Analysis results discarded."
+      "Applied": "Applied to the scene: {walls} walls, {ledges} ledges, {doors} doors, {lights} lights, {areas} height regions ({removed} earlier generated items removed).",
+      "Discarded": "Analysis results discarded.",
+      "MethodLabel": "Wall method",
+      "MethodHint": "AI coordinates: the AI reads wall coordinates itself. A safe choice for most maps. Pixel outline tracing: the AI only says where the floor is, and the wall line follows the actual edge in the image. More precise on caves and dungeons where floor and wall are clearly different, but the line breaks into steps when the AI is off by even one cell about the floor.",
+      "Method": {
+        "Trace": "Pixel outline tracing (experimental)",
+        "Coords": "AI coordinates"
+      },
+      "LedgeLabel": "Ledges (height changes)",
+      "LedgeHint": "What a cliff edge or drop-off becomes. An invisible wall blocks movement but not sight. A terrain wall lets sight through one such wall only. A height wall is a normal wall whose top is the height of the upper floor: with the Wall Height module active, one sees down from above and not up from below (the heights are only known with \"Make height regions\" on).",
+      "Ledge": {
+        "Invisible": "Invisible wall (blocks movement)",
+        "Terrain": "Terrain wall (limits sight)",
+        "Wall": "Normal wall",
+        "Height": "Height wall (needs Wall Height)",
+        "None": "Do not create"
+      },
+      "NoFloor": "The AI did not return a floor list, so no wall outline could be traced. Try again, or switch the wall method to \"AI coordinates\"."
     },
     "Progress": {
       "Overview": "Surveying the whole map…",
       "Tiles": "Analyzing tiles {done}/{total}",
-      "Cancelled": "Stopped."
+      "Cancelled": "Stopped.",
+      "Trace": "Tracing wall outlines in the image…",
+      "Heights": "Working out floor heights…",
+      "Refine": "Fitting wall lines to the picture…"
     },
     "Remove": {
-      "Button": "Remove AI-created walls and lights ({count})",
+      "Button": "Remove AI-created walls, lights and height regions ({count})",
       "Title": "Delete AI-Generated Objects",
-      "Confirm": "This will delete the {walls} walls and doors and {lights} lights that Scene AI created in this scene. Walls and lights you drew yourself will be kept.",
+      "Confirm": "This will delete the {walls} walls and doors, {lights} lights and {regions} height regions that Scene AI created in this scene. What you made yourself will be kept.",
       "Yes": "Delete",
-      "Done": "Removed {count} AI-created walls and lights."
+      "Done": "Removed {count} AI-created walls, lights and height regions."
     },
     "Error": {
       "Network": "Could not connect to the server. Check that the address is correct, the server is running, and, for local servers, that browser requests (CORS) are allowed. OpenAI also reports a wrong API key this way.",

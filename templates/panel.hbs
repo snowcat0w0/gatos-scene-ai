@@ -53,6 +53,12 @@
       <label class="gsa-check"><input type="checkbox" name="lights" {{checked opts.lights}} {{#if busy}}disabled{{/if}}><span>{{localize "GATOSSA.Analyze.Lights"}}</span></label>
     </div>
     <div class="gsa-grid2">
+      <label for="gsa-method" data-tooltip="{{localize "GATOSSA.Analyze.MethodHint"}}">{{localize "GATOSSA.Analyze.MethodLabel"}}</label>
+      <select id="gsa-method" name="method" {{#if busy}}disabled{{/if}}>{{selectOptions methodChoices selected=opts.method}}</select>
+      <label for="gsa-ledge" data-tooltip="{{localize "GATOSSA.Analyze.LedgeHint"}}">{{localize "GATOSSA.Analyze.LedgeLabel"}}</label>
+      <select id="gsa-ledge" name="ledgeMode" {{#if busy}}disabled{{/if}}>{{selectOptions ledgeChoices selected=opts.ledgeMode}}</select>
+      <label for="gsa-drop-cells" data-tooltip="{{localize "GATOSSA.Analyze.DropCellsHint"}}">{{localize "GATOSSA.Analyze.DropCells"}}{{#if dropUnit}} <span class="gsa-meta">= {{dropUnit}}</span>{{/if}}</label>
+      <input id="gsa-drop-cells" type="number" name="dropCells" value="{{opts.dropCells}}" min="0.5" max="20" step="0.5" {{#if busy}}disabled{{/if}}>
       <label for="gsa-tile-cells" data-tooltip="{{localize "GATOSSA.Analyze.TileCellsHint"}}">{{localize "GATOSSA.Analyze.TileCells"}}</label>
       <select id="gsa-tile-cells" name="tileCells" {{#if busy}}disabled{{/if}}>{{selectOptions tileChoices selected=opts.tileCells}}</select>
       <label for="gsa-snap" data-tooltip="{{localize "GATOSSA.Analyze.SnapHint"}}">{{localize "GATOSSA.Analyze.SnapLabel"}}</label>
@@ -60,6 +66,14 @@
       <label for="gsa-light-scale" data-tooltip="{{localize "GATOSSA.Analyze.LightScaleHint"}}">{{localize "GATOSSA.Analyze.LightScale"}}</label>
       <input id="gsa-light-scale" type="number" name="lightScale" value="{{opts.lightScale}}" min="0.25" max="4" step="0.25" {{#if busy}}disabled{{/if}}>
     </div>
+    <label class="gsa-check" data-tooltip="{{localize "GATOSSA.Analyze.HeightsHint"}}">
+      <input type="checkbox" name="heights" {{checked opts.heights}} {{#if busy}}disabled{{/if}}>
+      <span>{{localize "GATOSSA.Analyze.HeightsOption"}}</span>
+    </label>
+    <label class="gsa-check" data-tooltip="{{localize "GATOSSA.Analyze.RefineHint"}}">
+      <input type="checkbox" name="refine" {{checked opts.refine}} {{#if busy}}disabled{{/if}}>
+      <span>{{localize "GATOSSA.Analyze.Refine"}}</span>
+    </label>
     <label class="gsa-check" data-tooltip="{{localize "GATOSSA.Analyze.OverviewHint"}}">
       <input type="checkbox" name="overview" {{checked opts.overview}} {{#if busy}}disabled{{/if}}>
       <span>{{localize "GATOSSA.Analyze.Overview"}}</span>
@@ -82,7 +96,7 @@
 
     {{#if result}}
       <div class="gsa-found">
-        <p><i class="fa-solid fa-eye"></i> {{result.summary}}</p>
+        <p><i class="fa-solid fa-eye"></i> {{result.summary}}{{#if result.heights}} {{result.heights}}{{/if}}</p>
         {{#if result.failed}}<p class="gsa-note warn">{{result.failed}}</p>{{/if}}
         <p class="hint">{{localize "GATOSSA.Analyze.PreviewHint"}}</p>
         <label class="gsa-check">

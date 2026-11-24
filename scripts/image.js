@@ -257,6 +257,35 @@ export function renderGridCheck(source, det, gray, { cells = 8, maxEdge = 768 } 
   return { ...out, cells: across };
 }
 
+/**
+ * The map resampled to exactly `cell` pixels per grid cell, as raw RGBA for the pixel pass (segment.js).
+ * Pixels outside the picture (scene padding) stay transparent.
+ * @param {object} source                    from loadSource
+ * @param {object} p
+ * @param {{x, y, w, h}} p.rect              the cols × rows cell area in image pixels
+ * @param {number} p.cols
+ * @param {number} p.rows
+ * @param {number} p.cell                    pixels per cell
+ * @returns {{width: number, height: number, data: Uint8ClampedArray}}
+ */
+export function renderWork(source, { rect, cols, rows, cell }) {
+  const { canvas, ctx } = makeCanvas(cols * cell, rows * cell);
+  const sx0 = Math.max(0, rect.x);
+  const sy0 = Math.max(0, rect.y);
+  const sx1 = Math.min(source.width, rect.x + rect.w);
+  const sy1 = Math.min(source.height, rect.y + rect.h);
+  if (sx1 > sx0 && sy1 > sy0) {
+    const kx = canvas.width / rect.w;
+    const ky = canvas.height / rect.h;
+    ctx.drawImage(source.el, sx0, sy0, sx1 - sx0, sy1 - sy0, (sx0 - rect.x) * kx, (sy0 - rect.y) * ky, (sx1 - sx0) * kx, (sy1 - sy0) * ky);
+  }
+  try {
+    return { width: canvas.width, height: canvas.height, data: ctx.getImageData(0, 0, canvas.width, canvas.height).data };
+  } catch {
+    throw new ImageError("tainted", "the image is served from another site without CORS headers");
+  }
+}
+
 /** A white picture with one red square, for the connection test. */
 export function renderProbe() {
   const { canvas, ctx } = makeCanvas(96, 96);

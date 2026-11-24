@@ -6,6 +6,8 @@
  *     grid is laid on top of it (grid size, scene size, background offset).
  *   - Walls, doors, lights: the map is shown to the model tile by tile with a numbered coordinate grid; what it
  *     reports is previewed on the canvas and created as Wall / AmbientLight documents on request.
+ *   - Heights: from the cliff edges, stairs and slopes the model marks, the height of every area of floor is
+ *     worked out and stored as Regions; tokens walking into one get its height as their elevation.
  *
  * System-agnostic: only core documents are touched.
  */
@@ -19,6 +21,7 @@ import { detectSceneGrid, gridValuesFor } from "./grid.js";
 import { analyzeScene } from "./analyze.js";
 import { applyResult, removeGenerated, generatedIds } from "./apply.js";
 import { showPreview, clearPreview } from "./preview.js";
+import { registerGround, groundAt } from "./ground.js";
 
 const TOOL = "gatosSceneAi";
 
@@ -31,7 +34,10 @@ Hooks.once("init", () => {
     // Client scope: the connection (API key included) stays in this browser and is never sent to the server.
     provider: { scope: "client", hidden: true, type: Object, default: { ...DEFAULT_CONFIG } },
     panel: { scope: "client", hidden: true, type: Object, default: { ...DEFAULT_PANEL_OPTIONS } },
+    // Tokens that end a move inside a height region get that region's height as their elevation.
+    groundFollow: { scope: "world", type: Boolean, default: true },
   });
+  registerGround();
 });
 
 /** A button in the Walls and Lighting tool groups that opens the panel. */
@@ -55,7 +61,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
 Hooks.on("canvasReady", () => ScenePanel.current?.refresh());
 Hooks.on("canvasTearDown", () => clearPreview());
 Hooks.on(`${MODULE_ID}.providerChanged`, () => ScenePanel.current?.refresh());
-for (const hook of ["createWall", "deleteWall", "createAmbientLight", "deleteAmbientLight"]) {
+for (const hook of ["createWall", "deleteWall", "createAmbientLight", "deleteAmbientLight", "createRegion", "deleteRegion"]) {
   Hooks.on(hook, (doc) => {
     if (doc.parent === canvas?.scene) ScenePanel.current?.refresh();
   });
@@ -69,7 +75,7 @@ Hooks.once("ready", () => {
     /** detectGrid(scene, { ai: true }) → GridResult with `.values` to pass to scene.update. */
     async detectGrid(scene = canvas.scene, { ai = true } = {}) {
       const found = await detectSceneGrid(scene, { chat: ai ? chatWith() : undefined });
-      return found && { ...found, values: gridValuesFor(found.detection, found.image, CONST.GRID_MIN_SIZE ?? 50) };
+      return found && { ...found, values: gridValuesFor(found.detection, found.image) };
     },
     /** analyze(scene, options) → AnalysisResult; see analyze.js. */
     analyze(scene = canvas.scene, options = {}) {
@@ -85,6 +91,8 @@ Hooks.once("ready", () => {
     applyResult,
     removeGenerated,
     generatedIds,
+    /** groundAt(scene, {x, y}) → height of the floor there, or null outside every height region. */
+    groundAt,
     showPreview,
     clearPreview,
   });

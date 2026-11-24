@@ -7,7 +7,7 @@ import { confirm, pascal } from "./lib.js";
 import { getProvider, getPanelOptions, setPanelOptions, isConfigured, chatWith, describeError } from "./config.js";
 import { detectSceneGrid, gridValuesFor } from "./grid.js";
 import { analyzeScene, requestCount } from "./analyze.js";
-import { applyResult, removeGenerated, generatedIds } from "./apply.js";
+import { applyResult, removeGenerated, generatedIds, wallHeightActive } from "./apply.js";
 import { showPreview, clearPreview } from "./preview.js";
 import { backgroundSrc, readGridValues, applyGridValues } from "./scene.js";
 import { ProviderConfig } from "./provider-config.js";
@@ -15,7 +15,7 @@ import { ProviderError } from "./providers/common.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-const NUMBER_OPTIONS = new Set(["tileCells", "snap", "lightScale"]);
+const NUMBER_OPTIONS = new Set(["tileCells", "snap", "lightScale", "dropCells"]);
 const LOG_LINES = 8;
 
 /** Everything about a scene that makes an analysis result (canvas pixels) stale when it changes. */
@@ -109,13 +109,15 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
     const result = this.#result && {
       summary: mod.L("Analyze.Summary", {
         walls: this.#result.walls.length,
+        ledges: this.#result.ledges.length,
         doors: this.#result.doors.length,
         lights: this.#result.lights.length,
       }),
+      heights: this.#result.areas?.length ? mod.L("Analyze.HeightsSummary", { areas: this.#result.areas.length }) : null,
       failed: this.#result.failed.length
         ? mod.L("Analyze.Failed", { failed: this.#result.failed.length, tiles: this.#result.tiles })
         : null,
-      empty: !(this.#result.walls.length + this.#result.doors.length + this.#result.lights.length),
+      empty: !(this.#result.walls.length + this.#result.ledges.length + this.#result.doors.length + this.#result.lights.length),
     };
 
     const p = this.#progress;
@@ -148,9 +150,14 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
         percent: p.total ? Math.round((p.done / p.total) * 100) : 0,
         label: mod.L(`Progress.${pascal(p.phase)}`, { done: p.done, total: p.total }),
       },
-      generated: generated.walls.length + generated.lights.length,
-      canRemove: !busy && generated.walls.length + generated.lights.length > 0,
+      generated: generated.walls.length + generated.lights.length + generated.regions.length,
+      canRemove: !busy && generated.walls.length + generated.lights.length + generated.regions.length > 0,
       tileChoices: { 8: "8", 10: "10", 12: "12", 16: "16", 20: "20" },
+      methodChoices: { coords: mod.L("Analyze.Method.Coords"), trace: mod.L("Analyze.Method.Trace") },
+      ledgeChoices: Object.fromEntries(
+        ["invisible", "terrain", "wall", "height", "none"].map((k) => [k, mod.L(`Analyze.Ledge.${pascal(k)}`)]),
+      ),
+      dropUnit: scene ? `${opts.dropCells * scene.grid.distance} ${scene.grid.units ?? ""}`.trim() : "",
       snapChoices: {
         1: mod.L("Analyze.Snap.Full"),
         0.5: mod.L("Analyze.Snap.Half"),
@@ -195,8 +202,14 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     } else if (this.#result && !this.#busy) {
       // The canvas was redrawn for another reason: the preview layer went with it.
-      showPreview(this.#result, { lightScale: getPanelOptions().lightScale });
+      this.#preview();
     }
+  }
+
+  /** Draw the current result on the canvas with the current options. */
+  #preview() {
+    const opts = getPanelOptions();
+    showPreview(this.#result, { lightScale: opts.lightScale, ledges: opts.ledgeMode !== "none", areas: opts.heights });
   }
 
   #say(level, key, data) {
@@ -217,8 +230,9 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
     else if (NUMBER_OPTIONS.has(name)) opts[name] = Number(input.value);
     else opts[name] = input.value;
     if (name === "lightScale") opts.lightScale = Math.min(4, Math.max(0.25, opts.lightScale || 1));
+    if (name === "dropCells") opts.dropCells = Math.min(20, Math.max(0.5, opts.dropCells || 2));
     await setPanelOptions(opts);
-    if (name === "lightScale" && this.#result) showPreview(this.#result, { lightScale: opts.lightScale });
+    if ((name === "lightScale" || name === "ledgeMode" || name === "heights") && this.#result) this.#preview();
     this.render();
   }
 
@@ -244,7 +258,7 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
       const found = await detectSceneGrid(scene, { chat: useAI ? chatWith() : undefined, signal: this.#abort.signal });
       if (!found) this.#say("warn", "Grid.NotFound");
       else {
-        const values = gridValuesFor(found.detection, found.image, CONST.GRID_MIN_SIZE ?? 50);
+        const values = gridValuesFor(found.detection, found.image);
         this.#grid = { ...found, values };
         if (found.detection.confidence === "low") this.#say("warn", useAI ? "Grid.FoundLowAi" : "Grid.FoundLow");
         else if (found.verdict === "shifted" || found.verdict === "wrong") this.#say("warn", "Grid.FoundDoubt");
@@ -314,9 +328,12 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const result = await analyzeScene(scene, {
         chat: chatWith(provider),
-        want: { walls: opts.walls, doors: opts.doors, lights: opts.lights },
+        want: { walls: opts.walls, ledges: opts.ledgeMode !== "none", heights: opts.heights, doors: opts.doors, lights: opts.lights },
+        dropDefault: opts.dropCells * scene.grid.distance,
+        method: opts.method,
         tileCells: opts.tileCells,
         snapStep: opts.snap,
+        refine: opts.refine,
         overview: opts.overview,
         maxImagePx: provider.maxImagePx,
         concurrency: provider.concurrency,
@@ -328,12 +345,22 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       this.#result = result;
       this.#geometry = geometryKey(scene);
-      showPreview(result, { lightScale: opts.lightScale });
+      this.#preview();
       this.#say(result.failed.length ? "warn" : "ok", "Analyze.Done", {
         walls: result.walls.length,
+        ledges: result.ledges.length,
         doors: result.doors.length,
         lights: result.lights.length,
       });
+      if (result.refined?.chains) this.#say("info", "Analyze.Refined", result.refined);
+      if (result.heights) {
+        // Lines whose two sides could not be told apart are worth a warning: no height comes of them.
+        const { resolved, unresolved, conflicts } = result.heights;
+        this.#say(unresolved || conflicts ? "warn" : "info", "Analyze.Heights", { areas: result.areas.length, resolved, unresolved });
+        if (conflicts) this.#say("warn", "Analyze.HeightConflicts", { conflicts });
+      }
+      // Tracing needs the floor list; a model that left it out produced no outline at all.
+      if (result.method === "trace" && !result.floorCells) this.#say("warn", "Analyze.NoFloor");
       for (const f of result.failed.slice(0, 3)) this.#say("warn", "Analyze.TileFailed", { index: f.index + 1, message: f.message });
       if (result.usage.input + result.usage.output) this.#say("info", "Analyze.Usage", result.usage);
     } catch (err) {
@@ -357,7 +384,13 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
     const opts = getPanelOptions();
     this.#busy = "apply";
     try {
-      const made = await applyResult(scene, this.#result, { replace: opts.replace, lightScale: opts.lightScale });
+      const made = await applyResult(scene, this.#result, {
+        replace: opts.replace,
+        lightScale: opts.lightScale,
+        ledgeMode: opts.ledgeMode,
+        heights: opts.heights,
+      });
+      if (opts.ledgeMode === "height" && made.ledges && !wallHeightActive()) this.#say("warn", "Analyze.NoWallHeight");
       this.#result = null;
       clearPreview();
       this.#say("ok", "Analyze.Applied", made);
@@ -384,7 +417,7 @@ export class ScenePanel extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!count) return;
     const ok = await confirm({
       title: mod.L("Remove.Title"),
-      content: mod.L("Remove.Confirm", { walls: ids.walls.length, lights: ids.lights.length }),
+      content: mod.L("Remove.Confirm", { walls: ids.walls.length, lights: ids.lights.length, regions: ids.regions.length }),
       yes: { label: mod.L("Remove.Yes") },
       no: { label: mod.L("Common.Cancel") },
     });
