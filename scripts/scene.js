@@ -1,12 +1,33 @@
 /**
  * Scene access that differs between Foundry versions, kept in one place.
  *
- * v13: one background per scene (`scene.background.src`), moved with `background.offsetX` / `background.offsetY`.
+ * v14: a scene is a stack of levels, each with its own background (`level.background.src`); the scene as a whole
+ * is moved with `shiftX` / `shiftY`. Walls, lights and regions name the levels they belong to.
  */
 
-/** Path of the scene's background image or video, or null. */
+/**
+ * The level of a scene the module works on: the one shown on the canvas when the scene is being viewed, otherwise
+ * the scene's initial level.
+ */
+export function sceneLevel(scene) {
+  if (!scene) return null;
+  if (globalThis.canvas?.scene === scene && canvas.level) return canvas.level;
+  return scene.initialLevel ?? scene.firstLevel ?? null;
+}
+
+/** Path of the background image or video of the scene's level, or null. */
 export function backgroundSrc(scene) {
-  return scene?.background?.src || null;
+  return sceneLevel(scene)?.background?.src || null;
+}
+
+/**
+ * Where things made from the level's map belong: `levels` for walls, lights and regions, and the height of the
+ * level's floor, which heights read off the map are counted from.
+ * @returns {{levels: string[], base: number}}
+ */
+export function placement(scene) {
+  const level = sceneLevel(scene);
+  return { levels: level ? [level.id] : [], base: level?.elevation?.bottom ?? 0 };
 }
 
 /** Current grid-related values of a scene, in the shape `applyGridValues` takes. */
@@ -16,8 +37,8 @@ export function readGridValues(scene) {
     size: scene.grid.size,
     width: scene.width,
     height: scene.height,
-    offsetX: scene.background?.offsetX ?? 0,
-    offsetY: scene.background?.offsetY ?? 0,
+    offsetX: scene.shiftX ?? 0,
+    offsetY: scene.shiftY ?? 0,
   };
 }
 
@@ -28,8 +49,8 @@ export function applyGridValues(scene, values, extra = {}) {
     "grid.size": values.size,
     width: values.width,
     height: values.height,
-    "background.offsetX": values.offsetX,
-    "background.offsetY": values.offsetY,
+    shiftX: values.offsetX,
+    shiftY: values.offsetY,
     ...extra,
   });
 }

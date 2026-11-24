@@ -2,18 +2,18 @@
   "id": "gatos-scene-ai",
   "title": "Gato's Scene AI",
   "description": "개인 AI API 키나 로컬 LLM을 연결해 장면 배경 지도에 격자를 자동으로 맞추고, 지도를 읽어 벽·문·광원을 자동으로 배치합니다. Anthropic, OpenAI, Gemini, OpenRouter와 Ollama·LM Studio·llama.cpp 같은 OpenAI 호환 로컬 서버를 지원합니다. 시스템 무관.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "authors": [
     {
       "name": "jesun"
     }
   ],
   "url": "https://github.com/snowcat0w0/gatos-scene-ai",
-  "manifest": "https://raw.githubusercontent.com/snowcat0w0/gatos-scene-ai/master/module.json",
-  "download": "https://github.com/snowcat0w0/gatos-scene-ai/releases/download/v0.2.0/gatos-scene-ai.zip",
+  "manifest": "https://raw.githubusercontent.com/snowcat0w0/gatos-scene-ai/foundry-v14/module.json",
+  "download": "https://github.com/snowcat0w0/gatos-scene-ai/releases/download/v0.3.0/gatos-scene-ai.zip",
   "compatibility": {
-    "minimum": "13",
-    "verified": "13"
+    "minimum": "14",
+    "verified": "14"
   },
   "relationships": {
     "requires": [
@@ -21,9 +21,9 @@
         "id": "gatos-lib",
         "type": "module",
         "compatibility": {
-          "minimum": "1.0.0-alpha.1"
+          "minimum": "1.1.0-alpha.1"
         },
-        "manifest": "https://raw.githubusercontent.com/snowcat0w0/gatos-lib/master/module.json"
+        "manifest": "https://raw.githubusercontent.com/snowcat0w0/gatos-lib/foundry-v14/module.json"
       }
     ]
   },

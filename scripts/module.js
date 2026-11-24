@@ -91,7 +91,7 @@ Hooks.once("ready", () => {
     applyResult,
     removeGenerated,
     generatedIds,
-    /** groundAt(scene, {x, y}) → height of the floor there, or null outside every height region. */
+    /** groundAt(scene, {x, y}, levelId?) → height of the floor there, or null outside every height region. */
     groundAt,
     showPreview,
     clearPreview,

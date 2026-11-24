@@ -13,11 +13,17 @@ import { mod, MODULE_ID, FLAG_GROUND } from "./constants.js";
 /** Elevations that went through an animated move come back with rounding noise (29.999999999999996). */
 const same = (a, b) => Math.abs(a - b) < 1e-3;
 
-/** Height of the floor at a point of a scene, or null where no ground region covers it. */
-export function groundAt(scene, point) {
+/**
+ * Height of the floor at a point of a scene, or null where no ground region covers it.
+ * @param {Scene} scene
+ * @param {{x: number, y: number}} point
+ * @param {string} [level]   only regions of this level count (default: every level)
+ */
+export function groundAt(scene, point, level) {
   let height = null;
   for (const region of scene.regions) {
     if (!region.flags?.[MODULE_ID]?.[FLAG_GROUND]) continue;
+    if (level && !region.includedInLevel(level)) continue;
     // In plan only: the region's elevation range says how high its floor is, not who is inside.
     if (!region.polygonTree.testPoint(point)) continue;
     const bottom = region.elevation.bottom ?? 0;
@@ -33,12 +39,13 @@ async function onMoveToken(token, movement, operation) {
   const scene = token.parent;
   if (!scene?.regions?.size) return;
   const { origin, destination } = movement;
-  // The move itself changed the elevation: whoever moved the token meant that.
+  // The move itself changed the elevation or the level: whoever moved the token meant that.
   if (!same(origin.elevation, destination.elevation)) return;
-  const to = groundAt(scene, token.getCenterPoint(destination));
+  if ((origin.level ?? null) !== (destination.level ?? null)) return;
+  const to = groundAt(scene, token.getCenterPoint(destination), destination.level ?? token.level);
   if (to === null || same(to, destination.elevation)) return;
   // A token that was not standing on the ground where it came from is flying or climbing: leave it alone.
-  const from = groundAt(scene, token.getCenterPoint(origin));
+  const from = groundAt(scene, token.getCenterPoint(origin), origin.level ?? token.level);
   if (from !== null && !same(origin.elevation, from)) return;
 
   // Let the move play out first; changing the elevation is a move of its own and would cut the animation short.

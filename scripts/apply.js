@@ -4,6 +4,7 @@
  * work never touches walls, lights and regions the GM placed by hand.
  */
 import { mod, MODULE_ID, FLAG_GENERATED, FLAG_GROUND, LIGHT_KINDS } from "./constants.js";
+import { placement } from "./scene.js";
 
 const isGenerated = (doc) => !!doc.flags?.[MODULE_ID]?.[FLAG_GENERATED];
 
@@ -22,15 +23,17 @@ export const wallHeightActive = () => !!game.modules.get("wall-height")?.active;
 /**
  * A region for one area of floor of a given height. The height is the region's own bottom elevation, so the GM
  * can change it in the region's configuration; ground.js puts tokens that walk in at that elevation.
+ * Heights read off the map count from the floor of the level the map belongs to.
  */
-function regionData(area, scene, flags) {
-  const e = area.elevation;
+function regionData(area, scene, flags, { levels, base }) {
+  const e = base + area.elevation;
   const amount = `${e > 0 ? "+" : ""}${e} ${scene.grid.units ?? ""}`.trim();
   return {
     name: mod.L("Heights.RegionName", { amount }),
     color: e > 0 ? "#e8a23a" : e < 0 ? "#4d7bd6" : "#7d98ad",
     shapes: area.shapes.map((shape) => ({ type: "polygon", points: shape.points, hole: shape.hole })),
     elevation: { bottom: e, top: null },
+    levels,
     flags: { [MODULE_ID]: { ...flags[MODULE_ID], [FLAG_GROUND]: true } },
   };
 }
@@ -91,20 +94,22 @@ export async function applyResult(scene, result, { replace = true, lightScale = 
   const flags = { [MODULE_ID]: { [FLAG_GENERATED]: { run: foundry.utils.randomID(8) } } };
   const ledgeType = { invisible: "ledge-invisible", terrain: "ledge-terrain", wall: "wall", height: "ledge-invisible" }[ledgeMode];
   const ledges = ledgeType ? (result.ledges ?? []) : [];
+  // Everything belongs to the level whose map it was read from.
+  const place = placement(scene);
   const tall = ledgeMode === "height" && wallHeightActive();
   const ledgeWalls = ledges.map((c, i) => {
     const known = tall ? result.ledgeHeights?.[i] : null;
     if (!known) return wallData(c, ledgeType, scene, flags);
     // Wall Height: a wall stops the sight of eyes that are not above its top.
-    return wallData(c, "wall", scene, { ...flags, "wall-height": { top: known.top } });
+    return wallData(c, "wall", scene, { ...flags, "wall-height": { top: place.base + known.top } });
   });
   const walls = [
     ...result.walls.map((c) => wallData(c, "wall", scene, flags)),
     ...ledgeWalls,
     ...result.doors.map((d) => wallData(d.c, d.type, scene, flags)),
-  ];
-  const lights = result.lights.map((l) => lightData(l, scene, flags, lightScale));
-  const regions = heights ? (result.areas ?? []).map((area) => regionData(area, scene, flags)) : [];
+  ].map((data) => ({ ...data, levels: place.levels }));
+  const lights = result.lights.map((l) => ({ ...lightData(l, scene, flags, lightScale), levels: place.levels, elevation: place.base }));
+  const regions = heights ? (result.areas ?? []).map((area) => regionData(area, scene, flags, place)) : [];
   if (walls.length) await scene.createEmbeddedDocuments("Wall", walls);
   if (lights.length) await scene.createEmbeddedDocuments("AmbientLight", lights);
   if (regions.length) await scene.createEmbeddedDocuments("Region", regions);
